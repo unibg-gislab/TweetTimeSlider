@@ -1,0 +1,177 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset='utf-8' />
+  <title>Geolocated Tweets in Bergamo</title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+  <script src='https://api.mapbox.com/mapbox-gl-js/v0.44.1/mapbox-gl.js'></script>
+  <link href='https://api.mapbox.com/mapbox-gl-js/v0.44.1/mapbox-gl.css' rel='stylesheet' />
+  <style>
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Helvetica Neue', Helvetica, Arial, Sans-serif;
+  }
+
+  #map {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+  }
+
+  h1 {
+    font-size: 20px;
+    line-height: 30px;
+  }
+
+  h2 {
+    font-size: 14px;
+    line-height: 20px;
+    margin-bottom: 10px;
+  }
+
+  a {
+    text-decoration: none;
+    color: #2DC4B2;
+  }
+
+  #console {
+    position: absolute;
+    margin: 10px;
+    width: 240px;
+    background-color: white;
+    padding: 10px 20px;
+  }
+
+  .session {
+    margin-bottom: 20px;
+  }
+
+  .row {
+    height: 12px;
+    width: 100%;
+  }
+
+  .colors {
+    background: linear-gradient(to right, #2DC4B2, #3BB3C3, #669EC4, #8B88B6, #A2719B, #AA5E79);
+    margin-bottom: 5px;
+  }
+
+  .label {
+    width: 15%;
+    display: inline-block;
+    text-align: center;
+  }
+  </style>
+</head>
+
+<body>
+	<div id='map'></div>
+	<div id='console'>
+    <h1>Geolocated Tweets in Bergamo</h1>
+		<p>Data: FollowMe, Apr 2015 - May 2017</p>
+		<h2>Number of Tweet</h2>
+		<div class='row colors'>
+		</div>
+		<div class='row labels'>
+			<div class='label'>0</div>
+			<div class='label'>4</div>
+			<div class='label'>8</div>
+			<div class='label'>16</div>
+			<div class='label'>32</div>
+			<div class='label'>64+</div>
+		</div>
+		<div class='session' id='sliderbar'>
+			<h2>day of the week: <label id='active-dW'>Monday</label></h2>
+			<input id='slider-dW' class='row' type='range' min='0' max='6' step='1' value='0' />
+			<h2>day of the week: <label id='active-month'>January</label></h2>
+			<input id='slider-month' class='row' type='range' min='0' max='11' step='1' value='0' />
+		</div>
+	</div>
+ 
+<script>
+	mapboxgl.accessToken = 'pk.eyJ1IjoiZXhhbXBsZXMiLCJhIjoiY2lqbmpqazdlMDBsdnRva284cWd3bm11byJ9.V6Hg2oYJwMAxeoR9GEzkAA';
+	var map = new mapboxgl.Map({
+		container: 'map',
+		style: 'mapbox://styles/mapbox/dark-v9',
+		center: [9.67, 45.7],
+		zoom: 11
+	});
+
+	map.on('load', function() {
+	
+		map.addLayer({
+			id: 'tweet',
+			type: 'circle',
+			source: {
+				type: 'geojson',
+				data: 'http://localhost:8000/tweetPointNoSud.geojson' // replace this with the url of your own geojson	
+			},
+			paint: {
+				/*'circle-radius': {
+					'base': 6.25,
+					'stops': [[12, 4], [22, 180]]
+				},
+				 'circle-color': 
+					 '#ccc'
+				*/
+				'circle-radius': [
+					'interpolate',
+					["linear"],
+					['number', ['get', 'count']],
+					1, 2,
+					2, 4,
+					4, 6,
+					8, 9,
+					16, 13,
+					32, 17,
+					64, 24,
+					80, 30
+				],
+				'circle-color': [
+					'interpolate',
+					["linear"],
+					['number', ['get', 'count']],
+					0, '#2DC4B2',
+					4, '#3BB3C3',
+					8, '#669EC4',
+					16, '#8B88B6',
+					32, '#A2719B',
+					64, '#AA5E79'
+				],
+				'circle-opacity': 0.8
+			}
+		});
+    
+		document.getElementById('slider-dW').addEventListener('input', function(e) {
+			var dW = parseInt(e.target.value);
+			
+			var dayOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]; 
+			
+			// update the map
+			map.setFilter('tweet', ['==', ['number', ['get', 'dW']], dW]);
+
+			// update text in the UI
+			document.getElementById('active-dW').innerText = dayOfWeek[dW];
+		});
+		
+		document.getElementById('slider-month').addEventListener('input', function(e) {
+			var month = parseInt(e.target.value);
+			
+			var monthList = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]; 
+			
+			// update the map
+			map.setFilter('tweet', ['==', ['number', ['get', 'month']], month+1]);
+
+			// update text in the UI
+			document.getElementById('active-month').innerText = monthList[month];
+		});
+		
+	});
+  </script>
+</body>
+
+</html>
